@@ -1,3 +1,6 @@
+#!/usr/bin/env/python
+#encoding:utf-8
+
 import logging
 
 from gnarlytvdb import TVDB
@@ -6,13 +9,7 @@ from gnarlytvdb import EpisodeNotFoundError, SeasonNotFoundError, SeriesNotFound
 log = logging.getLogger('thetvdb')
 log.setLevel(logging.DEBUG)
 
-# t = thetvdb.TVDB()
-
-# series = t.get_series_id('the king of queens')
-#data = t.get_full_series(series)
-
 import unittest
-
 
 class TestWithCacheEN(unittest.TestCase):
     
@@ -45,5 +42,10 @@ class TestWithCacheEN(unittest.TestCase):
     def test_getitem(self):
         series = self.tvdb['seinfeld']
         series = self.tvdb[self.seinimdb, 'imdb']
+
+    def test_unicode(self):
+        sname = u'ástríður'
+        series = self.tvdb[sname]
+        assert series['seriesname'].lower() == sname
 
 unittest.main(verbosity=2)
