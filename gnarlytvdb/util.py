@@ -1,3 +1,6 @@
+#!/usr/bin/env/python
+#encoding:utf-8
+
 import re, os, md5, logging
 from tempfile import gettempdir
 

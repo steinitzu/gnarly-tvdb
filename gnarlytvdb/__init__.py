@@ -45,14 +45,14 @@ def _clean_value(key, value):
     Clean and convert to tvdb data to the right type.
     E.g. datefields are converted to date types, integer to ints and such.
     """
+    if value is None:
+        return
     dates = ('firstaired',)
     ints = (
         'id', 'seriesid', 'seasonid', 
         'seasonnumber', 'episodenumber'
         )
     if key in dates:
-        if value is None:
-            return None
         return datetime.strptime(value, '%Y-%m-%d')
     elif key in ints:
         return int(value)
