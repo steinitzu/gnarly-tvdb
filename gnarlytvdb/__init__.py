@@ -51,7 +51,7 @@ def _clean_value(key, value):
         return
     dates = ('firstaired',)
     ints = (
-        'id', 'seriesid', 'seasonid', 
+        'id', 'seasonid', 
         'seasonnumber', 'episodenumber'
         )
     if key in dates:
