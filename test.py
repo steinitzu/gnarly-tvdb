@@ -43,6 +43,13 @@ class TestWithCacheEN(unittest.TestCase):
         series = self.tvdb['seinfeld']
         series = self.tvdb[self.seinimdb, 'imdb']
 
+    def test_seriesdict(self):
+        """
+        Check if fetched series is really in series dict.
+        """
+        series = self.tvdb.get_series('seinfeld')
+        assert self.tvdb.sid_series[series['id']] == series
+
     def test_unicode(self):
         sname = u'ástríður'
         series = self.tvdb[sname]

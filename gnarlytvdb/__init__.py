@@ -6,6 +6,7 @@ from datetime import datetime
 from cStringIO import StringIO
 from zipfile import ZipFile
 import logging, sys
+from collections import OrderedDict
 
 import httplib2
 import xmltodict
@@ -38,6 +39,7 @@ class InvalidArgumentError(TheTVDBException): pass
 class SeriesNotFoundError(TheTVDBException): pass
 class SeasonNotFoundError(TheTVDBException): pass
 class EpisodeNotFoundError(TheTVDBException): pass
+class ItemExistsError(TheTVDBException): pass
 
 def _clean_value(key, value):
     """
@@ -53,7 +55,7 @@ def _clean_value(key, value):
         'seasonnumber', 'episodenumber'
         )
     if key in dates:
-        return datetime.strptime(value, '%Y-%m-%d')
+        return datetime.strptime(value, '%Y-%m-%d').date()
     elif key in ints:
         return int(value)
     else:
@@ -90,9 +92,27 @@ class Series(Item):
                 'Season no %s does not exists' % seasonnum
                 ), None, sys.exc_info()[2]
 
+    def add_season(self, season):
+        """
+        Add a `Season` object to the `season` dict.
+        This will raise `ItemExistsError` if given 
+        season already exists.
+        """
+        snum = season['seasonnumber']
+        if self.seasons.has_key(snum):
+            raise ItemExistsError(
+                'Season with number %s has already been added.' % snum
+                )
+        else:
+            season.series = self
+            self.seasons[snum] = season
+            
+        
+
 class Season(Item):
     def init(self):
         self.episodes = {} #epnum:Episode
+        self.series = None
 
     def episode(self, episodenum):        
         try:
@@ -102,11 +122,33 @@ class Season(Item):
                 'Episode no %s does not exists' % episodenum
                 ), None, sys.exc_info()[2]
 
+    def add_episode(self, episode):
+        epnum = episode['episodenumber']
+        if self.episodes.has_key(epnum):
+            raise ItemExistsError(
+                'Episode with number %s has already been added.' % epnum
+                )
+        else:
+            episode.season = self
+            episode.series = self.series
+            self.episodes[epnum] = episode
+
+
 class Episode(Item):    
     def init(self):
+        self.season = None
+        self.series = None
         pass
 
-
+def add_to_series_dict(func):
+    """
+    A decorator function to add fetched series to dict.
+    """
+    def add(self, *args, **kwargs):
+        s = func(self, *args, **kwargs)
+        self.sid_series[s['id']] = s
+        return s
+    return add
 
 class TVDB(object):
     #TODO: make these instance vars
@@ -122,7 +164,6 @@ class TVDB(object):
        'cache':True, 
        'get_first':True,
        'language':'en',
-       'use_zip' : True,
        'cache_max_age' : 86400, #'cache-control':'max-age' in seconds
        }       
 
@@ -206,6 +247,7 @@ class TVDB(object):
             self.api_key = DEFAULT_API_KEY
 
         self.name_seriesid = {} #dict storing name:sid mappings
+        self.sid_series = OrderedDict()
         self.http = httplib2.Http(cache=self.cache)
         self._reqheaders = {
             'cache-control':'max-age=%s' % self.cache_max_age
@@ -220,11 +262,11 @@ class TVDB(object):
                 'No series with name "%s" found on tvdb' % seriesname
                 )
         if self.get_first:
-            seriesid = series['seriesid']
+            seriesid = series['id']
             self.name_seriesid[seriesname] = seriesid
             return seriesid
         else:
-            return [s['seriesid'] for s in series]            
+            return [s['id'] for s in series]            
 
     def get_series_id(self, seriesname, imdb=False):
         """
@@ -244,39 +286,48 @@ class TVDB(object):
         try:
             #see if we already fetched it
             seriesid = self.name_seriesid[seriesname]
+            log.debug('Already got a series id for: %s' % seriesname)
         except KeyError:
             seriesid = self._get_series_id(url, seriesname)
         log.debug('Returning sid: %s', seriesid)
         return seriesid
 
+    @add_to_series_dict
     def get_series_by_id(self, seriesid):
         """
         Fill the given `Series` object with episode info.
         """        
+        try:
+            return self.sid_series[seriesid]
+        except KeyError:
+            pass #not memcached
         url = self.url_epinfozip
         data = self._get_raw_data(url, seriesid)        
-        #TODO: always use zip (remove use_zip thingy)
         #lang.xml, actors.xml, banners.xml
         #lang.xml has ['Data']['Series'] and ['Data']['Episode']
         xmld = self._extract_zip(StringIO(data))
         for k,v in xmld.iteritems():
             xmld[k] = self._xml_to_dict(v)
-        series = Series(**xmld[self.language+'.xml']['Data']['Series'])        
+        series = Series(**xmld[self.language+'.xml']['Data']['Series'])
         epdicts = xmld[self.language+'.xml']['Data']['Episode']
         for epd in epdicts:
-            ep = Episode(**epd)            
+            ep = Episode(**epd)
             seasno = ep['seasonnumber']
             try:
                 season = series.season(seasno)
-            except SeasonNotFoundError:                
+            except SeasonNotFoundError:
                 seasd = {
                     'seasonnumber' : seasno,
                     'seasonid' : ep['seasonid'],
                     'seriesid' : ep['seriesid']
                     }
                 season = Season(**seasd)
-                series.seasons[seasno] = season                
-            season.episodes[ep['episodenumber']] = ep
+                try:
+                    series.add_season(season)
+                except ItemExistsError: pass
+            try:
+                season.add_episode(ep)
+            except ItemExistsError: pass
         return series
 
     def get_series(self, seriesname, imdb=False):
@@ -302,6 +353,9 @@ class TVDB(object):
                     )
         else:
             return self.get_series(key)            
+
+
+        
 
     def _extract_zip(self, zipfile):
         """
