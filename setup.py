@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='gnarlytvdb',
-    version='0.03',
+    version='0.04',
     description='A python interface to thetvdb.com xml api.',
     author='Steinthor Palsson',
     author_email='steinitzu@gmail.com',
