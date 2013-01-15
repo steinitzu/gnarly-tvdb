@@ -7,7 +7,9 @@ Its aim is to be fast, simple to use and easy to understand.
 Easiest way to install is by using pip.
 If you don't have pip, see install instructions [here](http://www.pip-installer.org/en/latest/installing.html) or see if it is available through your distro's package management system (e.g. apt-get install python-pip).
 After you have installed pip you can go ahead and install gnarlytvdb with the following command:  
+
     pip install gnarlytvdb
+    
 (you may need to add sudo in front of that command)  
 That's it.
 
@@ -15,11 +17,16 @@ That's it.
 If you prefer to get the latest changes from the source repo, here is how.
 
 Start by cloning the repo.
+
     cd /tmp
     git clone git://github.com/steinitzu/gnarly-tvdb.git
+    
 cd to the projects root folder
+
     cd gnarly-tvdb
+    
 now install (you may need to add `sudo` in front of the next command)
+
     python setup.py install
 
 That's it!
