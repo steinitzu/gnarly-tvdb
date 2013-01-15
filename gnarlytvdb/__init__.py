@@ -24,7 +24,7 @@ def make_log():
 make_log()
 
 log = logging.getLogger('thetvdb')
-DEFAULT_API_KEY = '0629B785CE550C8D'
+DEFAULT_API_KEY = '29E8EC8DF23A5918'
 
 class TheTVDBException(Exception): 
     def __init__(self, *args, **kwargs):
@@ -201,7 +201,7 @@ class TVDB(object):
             Api key for your application.
             Get one here if you don't have one.
             http://thetvdb.com/?tab=apiregister            
-            If None is passed, tvdbs default api key is used.
+            If None is passed, gnarlytvdb's default api key is used.
 
         cache=bool|path
             Can be either a bool or a path to a directory.
