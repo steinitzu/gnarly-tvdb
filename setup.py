@@ -5,11 +5,11 @@ from setuptools import setup
 
 setup(
     name='gnarlytvdb',
-    version='0.04',
+    version='0.5',
     description='A python interface to thetvdb.com xml api.',
     author='Steinthor Palsson',
     author_email='steinitzu@gmail.com',
-    url='https://github.com/steinitzu',
+    url='https://github.com/steinitzu/gnarly-tvdb',
     license='MIT',
 
     include_package_data=True,
