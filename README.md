@@ -39,7 +39,7 @@ Note if you don't already have a tvdb api key for your application, you can regi
 
 So lets start by opening a TVDB instance.
 
-    >> from thetvdb.thetvdb import TVDB
+    >> from gnarlytvdb import TVDB
     >> tv = TVDB(api_key='my_api_key')
     
 Other available arguments for `TVDB` are documented in the class' docstring.
