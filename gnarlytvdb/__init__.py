@@ -407,7 +407,10 @@ class TVDB(object):
         `series` can be a series name, id or imdb id.
         """
         url = self._get_url(url, series)
-        response = self.http.request(url, headers=self._reqheaders)
+        try:
+            response = self.http.request(url, headers=self._reqheaders)
+        except httplib2.ServerNotFoundError as e:
+            raise TVDBConnectError(e.message), None, sys.exc_info()[2]
         rep = response[0]
         log.debug(
             'http-status:%s,content:%s', 
