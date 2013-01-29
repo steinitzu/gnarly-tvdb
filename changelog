@@ -1,0 +1,4 @@
+version 0.6
+=================
+* Support DVD ordering for seasons and episodes.
+* Getting multiple results for a search query should be possible now (with `get_first = False`)
