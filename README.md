@@ -11,7 +11,7 @@ Its aim is to be fast, simple to use and easy to understand.
 
 
 ## Install from pypi ##
-GnarlyTVDB is on pypi and can be easily install usind pip.
+gnarlytvdb is on pypi and can be easily install using pip.
 If you don't have pip, see install instructions [here](http://www.pip-installer.org/en/latest/installing.html) or see if it is available through your distro's package management system (e.g. apt-get install python-pip).
 After you have installed pip you can go ahead and install gnarlytvdb with the following command:  
 
