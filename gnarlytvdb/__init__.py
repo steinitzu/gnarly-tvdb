@@ -52,7 +52,8 @@ def _clean_value(key, value):
     dates = ('firstaired',)
     ints = (
         'id', 'seasonid', 
-        'seasonnumber', 'episodenumber'
+        'seasonnumber', 'episodenumber',
+        'dvd_season', 
         )
     if key in dates:
         return datetime.strptime(value, '%Y-%m-%d').date()
@@ -293,7 +294,7 @@ class TVDB(object):
         return seriesid
 
     @add_to_series_dict
-    def get_series_by_id(self, seriesid):
+    def get_series_by_id(self, seriesid, order='aired'):
         """
         Fill the given `Series` object with episode info.
         """        
@@ -330,14 +331,19 @@ class TVDB(object):
             except ItemExistsError: pass
         return series
 
-    def get_series(self, seriesname, imdb=False):
+    def get_series(self, seriesname, imdb=False, order='aired'):
         """
         get_series(seriesname, imdb=False) -> Series
         Get series with given `seriesname`.
         if imdb==True, `seriesname` will be treated as an imdb id.
+
+        `order` argument can be 'aired', 'dvd' or 'absolute'.
+        This will determine how episodes and seasons are ordered within 
+        the resulting Series object.
+        'aired' order is the default.
         """        
         sid = self.get_series_id(seriesname, imdb=imdb)
-        return self.get_series_by_id(sid)
+        return self.get_series_by_id(sid, order=order)
 
     def __getitem__(self, key):
         if isinstance(key,(int, long)):
