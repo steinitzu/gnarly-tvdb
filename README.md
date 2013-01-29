@@ -3,8 +3,15 @@
 This is yet another python interface to [thetvdb.com](http://thetvdb.com) programmer's api. 
 Its aim is to be fast, simple to use and easy to understand.
 
+## Features ##
+* String values from TVDB are (mostly) converted to the appropriate python datatypes
+* In memory and on disk caching
+* Look up a series by imdb id
+* Supports aired and DVD ordering for seasons and episodes
+
+
 ## Install from pypi ##
-Easiest way to install is by using pip.
+GnarlyTVDB is on pypi and can be easily install usind pip.
 If you don't have pip, see install instructions [here](http://www.pip-installer.org/en/latest/installing.html) or see if it is available through your distro's package management system (e.g. apt-get install python-pip).
 After you have installed pip you can go ahead and install gnarlytvdb with the following command:  
 
@@ -65,8 +72,17 @@ Or you want to see when Seinfeld first aired
 
     >> print series['firstaired']
     1990-05-31
+
+It is also possible to get episodes in their DVD release order by setting the `order` argument to 'dvd'.
+Example:
+
+    >> print series.season(2).episode(12)['episodename']
+    The Busboy
+    >> print series.season(2, order='dvd').episode(12)['episodename']
+    The Revenge    
     
-    
+
+
 Please feel free to contact me with any questions, comments, bug reports, hatemail, loveletters, etc, either in the project's bugtracker https://github.com/steinitzu/gnarly-tvdb/issues or at steinitzu@gmail.com 
 
 

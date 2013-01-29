@@ -50,9 +50,23 @@ class TestWithCacheEN(unittest.TestCase):
         series = self.tvdb.get_series('seinfeld')
         assert self.tvdb.sid_series[series['id']] == series
 
+    def test_dvd_order(self):
+        series = self.tvdb.get_series('seinfeld')
+        ep3 = series.season(2).episode(3)
+        dvd3 = series.season(2, order='dvd').episode(3)
+        assert ep3['episodename'] == 'The Jacket'
+        assert dvd3['episodename'] == 'The Busboy'
+
     def test_unicode(self):
         sname = u'ástríður'
         series = self.tvdb[sname]
         assert series['seriesname'].lower() == sname
+
+    def test_get_many_series(self):
+        self.tvdb.get_first = False
+        l = self.tvdb['scrubs']
+        assert isinstance(l, list)
+        assert len(l) > 1
+
 
 unittest.main(verbosity=2)
