@@ -55,10 +55,15 @@ def _clean_value(key, value):
         'seasonnumber', 'episodenumber',
         'dvd_season', 
         )
+    floats = (
+        'dvd_episodenumber'
+        )
     if key in dates:
         return datetime.strptime(value, '%Y-%m-%d').date()
     elif key in ints:
         return int(value)
+    elif key in floats:
+        return float(value)
     else:
         return value
 
@@ -84,30 +89,68 @@ class Series(Item):
 
     def init(self):
         self.seasons = {} #seasonnum:Season
+        self.dvd_seasons = {}
 
-    def season(self, seasonnum):
+    def add_episode(self, ep):
+        """
+        Add given Episode to this Series.
+        Seasons will be created implicitly.
+        """
+        #make da season
+        ses = self._add_season(ep)
+        dvdses = self._add_season(ep, dvd=True)        
+        self._add_episode(ep, ses)
+        self._add_episode(ep, dvdses, dvd=True)
+        
+    def _add_episode(self, ep, season, dvd=False):
+        if dvd:
+            epnum = ep['dvd_episodenumber']
+        else:
+            epnum = ep['episodenumber']
+        ep.series = self
+        season.episodes[epnum] = ep
+
+    def _add_season(self, ep, dvd=False):
+        """
+        Make a Season object for given Episode and 
+        add it to appropriate seasons dict.
+        Resulting Season is returned.
+        """
+        if dvd:
+            snum = ep['dvd_season']
+            seasons = self.dvd_seasons
+        else:
+            snum = ep['seasonnumber']
+            seasons = self.seasons
+        if seasons.has_key(snum):
+            return seasons[snum]
+        else:
+            s = Season(
+                sasonnumber=snum,
+                seasonid=ep['seasonid'],
+                seriesid=ep['seriesid']
+                )
+            s.series = self
+            seasons[snum] = s
+            return s
+
+    def season(self, seasonnum, order='aired'):
+        """
+        Get a Season by season number.
+        `order` can be 'aired' or 'dvd' depending on the 
+        desired season/episode ordering.
+        Subsequent episodes will follow the order given here.
+        """
+        if order=='aired':
+            seasons = self.seasons
+        elif order == 'dvd':
+            seasons = self.dvd_seasons
         try:
-            return self.seasons[seasonnum]
+            return seasons[seasonnum]
         except KeyError:
             raise SeasonNotFoundError(
                 'Season no %s does not exists' % seasonnum
-                ), None, sys.exc_info()[2]
-
-    def add_season(self, season):
-        """
-        Add a `Season` object to the `season` dict.
-        This will raise `ItemExistsError` if given 
-        season already exists.
-        """
-        snum = season['seasonnumber']
-        if self.seasons.has_key(snum):
-            raise ItemExistsError(
-                'Season with number %s has already been added.' % snum
-                )
-        else:
-            season.series = self
-            self.seasons[snum] = season
-            
+                ), None, sys.exc_info()[2]            
         
 
 class Season(Item):
@@ -123,23 +166,10 @@ class Season(Item):
                 'Episode no %s does not exists' % episodenum
                 ), None, sys.exc_info()[2]
 
-    def add_episode(self, episode):
-        epnum = episode['episodenumber']
-        if self.episodes.has_key(epnum):
-            raise ItemExistsError(
-                'Episode with number %s has already been added.' % epnum
-                )
-        else:
-            episode.season = self
-            episode.series = self.series
-            self.episodes[epnum] = episode
-
-
 class Episode(Item):    
     def init(self):
         self.season = None
         self.series = None
-        pass
 
 def add_to_series_dict(func):
     """
@@ -294,7 +324,7 @@ class TVDB(object):
         return seriesid
 
     @add_to_series_dict
-    def get_series_by_id(self, seriesid, order='aired'):
+    def get_series_by_id(self, seriesid):
         """
         Fill the given `Series` object with episode info.
         """        
@@ -313,6 +343,8 @@ class TVDB(object):
         epdicts = xmld[self.language+'.xml']['Data']['Episode']
         for epd in epdicts:
             ep = Episode(**epd)
+            series.add_episode(ep)
+            """
             seasno = ep['seasonnumber']
             try:
                 season = series.season(seasno)
@@ -329,21 +361,17 @@ class TVDB(object):
             try:
                 season.add_episode(ep)
             except ItemExistsError: pass
+            """
         return series
 
-    def get_series(self, seriesname, imdb=False, order='aired'):
+    def get_series(self, seriesname, imdb=False):
         """
         get_series(seriesname, imdb=False) -> Series
         Get series with given `seriesname`.
         if imdb==True, `seriesname` will be treated as an imdb id.
-
-        `order` argument can be 'aired', 'dvd' or 'absolute'.
-        This will determine how episodes and seasons are ordered within 
-        the resulting Series object.
-        'aired' order is the default.
         """        
         sid = self.get_series_id(seriesname, imdb=imdb)
-        return self.get_series_by_id(sid, order=order)
+        return self.get_series_by_id(sid)
 
     def __getitem__(self, key):
         if isinstance(key,(int, long)):
