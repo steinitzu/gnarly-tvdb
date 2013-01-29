@@ -47,13 +47,13 @@ def _clean_value(key, value):
     Clean and convert to tvdb data to the right type.
     E.g. datefields are converted to date types, integer to ints and such.
     """
-    if value is None:
+    if value is None or value == '':
         return
     dates = ('firstaired',)
     ints = (
         'id', 'seasonid', 
         'seasonnumber', 'episodenumber',
-        'dvd_season', 
+        'dvd_season', 'absolute_number',        
         )
     floats = (
         'dvd_episodenumber'
@@ -344,24 +344,6 @@ class TVDB(object):
         for epd in epdicts:
             ep = Episode(**epd)
             series.add_episode(ep)
-            """
-            seasno = ep['seasonnumber']
-            try:
-                season = series.season(seasno)
-            except SeasonNotFoundError:
-                seasd = {
-                    'seasonnumber' : seasno,
-                    'seasonid' : ep['seasonid'],
-                    'seriesid' : ep['seriesid']
-                    }
-                season = Season(**seasd)
-                try:
-                    series.add_season(season)
-                except ItemExistsError: pass
-            try:
-                season.add_episode(ep)
-            except ItemExistsError: pass
-            """
         return series
 
     def get_series(self, seriesname, imdb=False):
@@ -370,8 +352,25 @@ class TVDB(object):
         Get series with given `seriesname`.
         if imdb==True, `seriesname` will be treated as an imdb id.
         """        
+        if not self.get_first:
+            shows =  self._get_many_series(seriesname, imdb=imdb)
+            log.debug(shows)
+            return shows
         sid = self.get_series_id(seriesname, imdb=imdb)
         return self.get_series_by_id(sid)
+
+    def _get_many_series(self, seriesname, imdb=False):
+        """
+        Used when `get_first` is False.
+        Returns a list of Series.
+        """
+        shows = []
+        sids = [s for s in self.get_series_id(seriesname, imdb=imdb)]
+        for s in sids:
+            shows.append(self.get_series_by_id(s))
+        log.debug('sids: %s', sids)
+        return shows
+        
 
     def __getitem__(self, key):
         if isinstance(key,(int, long)):
@@ -386,10 +385,7 @@ class TVDB(object):
                     '"%s" is not a valid key modifier.' % mod
                     )
         else:
-            return self.get_series(key)            
-
-
-        
+            return self.get_series(key)                    
 
     def _extract_zip(self, zipfile):
         """
@@ -431,7 +427,10 @@ class TVDB(object):
             else:
                 return Series(**shows)
         else:
-            return [Series(**v) for v in shows.itervalues()]
+            if isinstance(shows, list):                
+                return [Series(**v) for v in shows]
+            else:
+                return [Series(**shows)]
 
 
     def _get_raw_data(self, url, series):

@@ -62,4 +62,11 @@ class TestWithCacheEN(unittest.TestCase):
         series = self.tvdb[sname]
         assert series['seriesname'].lower() == sname
 
+    def test_get_many_series(self):
+        self.tvdb.get_first = False
+        l = self.tvdb['scrubs']
+        assert isinstance(l, list)
+        assert len(l) > 1
+
+
 unittest.main(verbosity=2)
